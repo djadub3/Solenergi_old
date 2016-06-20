@@ -1,6 +1,24 @@
-<fragment xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:id="@+id/fragment"
-    android:name="com.example.andy.solenergi.SolenergiFragment"
-    tools:layout="@layout/fragment_solenergi" android:layout_width="match_parent"
-    android:layout_height="fill_parent" />
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
 
+    <fragment
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:name="com.example.andy.solenergi.SolenergiFragment"
+        android:id="@+id/fragment"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_toEndOf="@+id/graphList"
+        android:layout_toRightOf="@+id/graphList" />
+
+    <ListView
+        android:layout_width="125dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/graphList"
+        android:layout_centerVertical="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+</RelativeLayout>
