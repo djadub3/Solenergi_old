@@ -33,6 +33,7 @@ import org.json.JSONObject;
  * A placeholder fragment containing a simple view.
  */
 public class SolenergiFragment extends Fragment {
+    //some changes
 
     private static final String TAG = "BluetoothChatFragment";
 
