@@ -1,0 +1,8 @@
+<resources>
+    <string-array name="graphs_array">
+        <item>Live View</item>
+        <item>Day View</item>
+        <item>Week View</item>
+    </string-array>
+
+</resources>
