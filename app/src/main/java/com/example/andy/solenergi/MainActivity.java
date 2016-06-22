@@ -30,10 +30,11 @@ import com.jjoe64.graphview.series.LineGraphSeries;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.nio.charset.StandardCharsets;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
-    private MenuItem mSpinnerItem1;
 
     // Intent request codes
     private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
@@ -87,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
     private CharSequence mDrawerTitle;
     private CharSequence mTitle;
     LiveViewFragment LVfragment;
+    DayGraphFragment DgFragment;
 
 
 
@@ -142,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
         actionBar.setHomeButtonEnabled(true);
 
         LVfragment =new LiveViewFragment();
+        DgFragment = new DayGraphFragment();
         if(LVfragment==null) Log.v(TAG,"fragment null");
         android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
         if(fragmentManager==null) Log.v(TAG,"fragment manager null");
@@ -179,34 +182,24 @@ public class MainActivity extends AppCompatActivity {
         Log.v(TAG,mGraphTitles[position]);
         Log.v(TAG,position+"");
         if (position ==0) {
-            LiveViewFragment fragment =new LiveViewFragment();
-            if(fragment==null) Log.v(TAG,"fragment null");
             android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
-            if(fragmentManager==null) Log.v(TAG,"fragment manager null");
             FragmentTransaction fragTrans= fragmentManager.beginTransaction();
-            if(fragTrans==null)Log.v(TAG,"frag trans null");
-            fragTrans.add(R.id.content_frame, fragment);
+            fragTrans.replace(R.id.content_frame, LVfragment);
             fragTrans.commit();
             mDrawerLayout.closeDrawer(mDrawerList);
-            Log.v(TAG,"select item complerte");
+        }
+        if(position==1)
+        {
+            String outString="1";
+            byte[] outArray=outString.getBytes(StandardCharsets.UTF_8);
+            mChatService.write(outArray);
+            android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
+            FragmentTransaction fragTrans= fragmentManager.beginTransaction();
+            fragTrans.replace(R.id.content_frame, DgFragment);
+            fragTrans.commit();
+            mDrawerLayout.closeDrawer(mDrawerList);
         }
 
-        // Create a new fragment and specify the planet to show based on position
-        /*Fragment fragment = new PlanetFragment();
-        Bundle args = new Bundle();
-        args.putInt(PlanetFragment.ARG_PLANET_NUMBER, position);
-        fragment.setArguments(args);
-
-        // Insert the fragment by replacing any existing fragment
-        FragmentManager fragmentManager = getFragmentManager();
-        fragmentManager.beginTransaction()
-                .replace(R.id.content_frame, fragment)
-                .commit();
-
-        // Highlight the selected item, update the title, and close the drawer
-        mDrawerList.setItemChecked(position, true);
-        setTitle(mPlanetTitles[position]);
-        mDrawerLayout.closeDrawer(mDrawerList);*/
     }
 
     @Override
@@ -318,7 +311,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case Constants.MESSAGE_WRITE:
                     break;
-                case Constants.MESSAGE_READ:
+                case Constants.READ_LIVE:
                     JSONObject inputJson = null;
                     try {
                         inputJson = new JSONObject((String) msg.obj);           //extract JSON string from msg
@@ -344,6 +337,17 @@ public class MainActivity extends AppCompatActivity {
                                 Toast.LENGTH_SHORT).show();
                     }
                     break;
+                case Constants.READ_DAY:
+                    JSONObject inputJson2 = null;
+                    try {
+                        inputJson2 = new JSONObject((String) msg.obj);           //extract JSON string from msg
+                        Log.v(TAG,inputJson2.toString());
+                        //LiveViewFragment LiveViewFrag = (LiveViewFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_live_view);
+                        DgFragment.updateGraph(inputJson2);
+
+                    } catch (JSONException e) {                                 // catch errors with JSON extraction
+                        e.printStackTrace();
+                    }
             }
         }
     };

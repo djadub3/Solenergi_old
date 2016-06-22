@@ -9,6 +9,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -466,10 +470,26 @@ public class BluetoothService {
                             JsonString += inchar;
                             sentByte = mmInStream.read();
                         }
+
                         Log.v(" Input string", JsonString);
-                        // Send the obtained bytes to the UI Activity
-                        mHandler.obtainMessage(Constants.MESSAGE_READ,-1,-1,JsonString)
-                                .sendToTarget();
+                        int tag=-1;
+                        JSONObject inputJson;
+                        try {
+                            inputJson = new JSONObject((String) JsonString);
+                            tag = Integer.parseInt(inputJson.getString("tag"));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        if(tag==1) {
+                            // Send the obtained bytes to the UI Activity
+                            mHandler.obtainMessage(Constants.READ_LIVE, -1, -1, JsonString)
+                                    .sendToTarget();
+                        }
+                        if(tag==2) {
+                            // Send the obtained bytes to the UI Activity
+                            mHandler.obtainMessage(Constants.READ_DAY, -1, -1, JsonString)
+                                    .sendToTarget();
+                        }
                         JsonString="";
                     }
                 } catch (IOException e) {

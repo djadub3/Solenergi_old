@@ -71,7 +71,7 @@ public class LiveViewFragment extends Fragment {
         powerView = (TextView) view.findViewById(R.id.power_text);
 
 
-        GraphView graph = (GraphView) view.findViewById(R.id.graph);
+        GraphView graph = (GraphView) view.findViewById(R.id.day_graph);
         series = new LineGraphSeries<DataPoint>();
         graph.addSeries(series);
         graph.getGridLabelRenderer().setGridColor(Color.GRAY);
