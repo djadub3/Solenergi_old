@@ -190,9 +190,7 @@ public class MainActivity extends AppCompatActivity {
         }
         if(position==1)
         {
-            String outString="1";
-            byte[] outArray=outString.getBytes(StandardCharsets.UTF_8);
-            mChatService.write(outArray);
+
             android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
             FragmentTransaction fragTrans= fragmentManager.beginTransaction();
             fragTrans.replace(R.id.content_frame, DgFragment);
@@ -418,6 +416,12 @@ public class MainActivity extends AppCompatActivity {
                 Intent serverIntent = new Intent(activity, DeviceListActivity.class);
                 startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE_SECURE);
                 return true;
+            }
+            case R.id.load_day_data:{
+                String outString="1";
+                byte[] outArray=outString.getBytes(StandardCharsets.UTF_8);
+                mChatService.write(outArray);
+
             }
 
         }

@@ -1,9 +1,12 @@
 package com.example.andy.solenergi;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -23,8 +26,7 @@ import java.util.TimeZone;
 
 public class DayGraphFragment extends Fragment {
 
-
-    View mView;
+    private View mView;
     // variables
     private double voltage;
     private double batVoltage;
@@ -32,15 +34,13 @@ public class DayGraphFragment extends Fragment {
     private double power;
     private String time;
 
-    private ArrayList<DataPoint> dataPointArrayList;
+    private ArrayList<DataPoint> powerDataPointArrayList;
+    private ArrayList<DataPoint> batteryDataPointArrayList;
 
     // graphing variables
-    private double graphLastXValue = 0d;
+
     private LineGraphSeries<DataPoint> series;
-    private double graph2LastXValue = 0d;
-    private double graph3LastXValue = 0d;
-    private LineGraphSeries<DataPoint> series2;
-    private LineGraphSeries<DataPoint> series3;
+
 
 
     public DayGraphFragment() {
@@ -50,7 +50,9 @@ public class DayGraphFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        dataPointArrayList = new ArrayList<DataPoint>();
+        powerDataPointArrayList = new ArrayList<DataPoint>();
+        batteryDataPointArrayList = new ArrayList<DataPoint>();
+        setHasOptionsMenu(true);
 
     }
 
@@ -58,7 +60,6 @@ public class DayGraphFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-
         return inflater.inflate(R.layout.fragment_day_graph, container, false);
     }
 
@@ -71,14 +72,13 @@ public class DayGraphFragment extends Fragment {
 
     public void updateGraph(JSONObject inputJson)
     {
-        //dataPointArrayList = new ArrayList<DataPoint>();
         try {
             if(inputJson.getInt("end")==0) {
                 //Log.v("load graph","data read");
                 time = inputJson.getString("time");
-                voltage = Double.parseDouble(inputJson.getString("involtage"));
-                batVoltage = Double.parseDouble(inputJson.getString("batVoltage"));
-                current = Math.abs(Double.parseDouble(inputJson.getString("current")));
+                power = inputJson.getDouble("power");
+                batVoltage = inputJson.getDouble("batVoltage");
+
 
                 int year = Integer.parseInt(time.substring(16,20));
                 int month = Integer.parseInt(time.substring(13,15));
@@ -89,8 +89,9 @@ public class DayGraphFragment extends Fragment {
 
                 Calendar cal=new GregorianCalendar(year,month,day,hour,min,sec);
                 cal.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
-                Log.v("Time", String.valueOf(cal.getTimeZone()));
-                dataPointArrayList.add(new DataPoint(cal.getTime(), voltage));
+
+                powerDataPointArrayList.add(new DataPoint(cal.getTime(), power));
+                batteryDataPointArrayList.add(new DataPoint(cal.getTime(), batVoltage));
 
             }
 
@@ -98,13 +99,32 @@ public class DayGraphFragment extends Fragment {
 
                 //Log.v("load graph","end of data read");
                 GraphView graph = (GraphView) mView.findViewById(R.id.day_graph);
-                DataPoint[] dataPointArray = dataPointArrayList.toArray(new DataPoint[dataPointArrayList.size()]);
+                DataPoint[] powerDataPointArray = powerDataPointArrayList.toArray(new DataPoint[powerDataPointArrayList.size()]);
+                DataPoint[] batteryDataPointArray = batteryDataPointArrayList.toArray(new DataPoint[batteryDataPointArrayList.size()]);
 
-                graph.addSeries(series = new LineGraphSeries<DataPoint>(dataPointArray));
+                LineGraphSeries<DataPoint> powerSeries = new LineGraphSeries<DataPoint>(powerDataPointArray);
+                LineGraphSeries<DataPoint> batterySeries = new LineGraphSeries<DataPoint>(batteryDataPointArray);
+
+                graph.addSeries(powerSeries);
+                graph.addSeries(batterySeries);
+
+                powerSeries.setColor(Color.argb(100, 100, 0, 0));
+                batterySeries.setColor(Color.argb(100,0,100,0));
+
+
+                powerSeries.setBackgroundColor(Color.argb(50, 100, 0, 0));
+                batterySeries.setBackgroundColor(Color.argb(50, 0, 100, 0));
+                powerSeries.setDrawBackground(true);
+                batterySeries.setDrawBackground(true);
+                graph.getGridLabelRenderer().setPadding(30);
+                graph.getViewport().setScalable(true);
+                graph.getGridLabelRenderer().reloadStyles();
+
+
+
                 graph.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
                     @Override
                     public String formatLabel(double value, boolean isValueX) {
-                        // TODO Auto-generated method stub
                         if (isValueX) {
                             SimpleDateFormat sdf = new SimpleDateFormat("h:mm a", Locale.ENGLISH);
                             sdf.setTimeZone(TimeZone.getDefault());
@@ -114,12 +134,21 @@ public class DayGraphFragment extends Fragment {
                         return ""+(int) value;
                     }
                 });
-                dataPointArrayList = new ArrayList<DataPoint>();
+                powerDataPointArrayList = new ArrayList<DataPoint>();
             }
 
         }catch(Exception e){
             Log.v("DAY_VIEW","graph not updated");
         }
     }
+
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_day_graph,menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+
 
 }
