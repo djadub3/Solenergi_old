@@ -341,7 +341,7 @@ public class MainActivity extends AppCompatActivity {
                     JSONObject inputJson2 = null;
                     try {
                         inputJson2 = new JSONObject((String) msg.obj);           //extract JSON string from msg
-                        Log.v(TAG,inputJson2.toString());
+                        //Log.v(TAG,inputJson2.toString());
                         //LiveViewFragment LiveViewFrag = (LiveViewFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_live_view);
                         DgFragment.updateGraph(inputJson2);
 

@@ -1,6 +1,5 @@
 package com.example.andy.solenergi;
 
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -9,11 +8,19 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
 import org.json.JSONObject;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
 
 
 /**
@@ -26,12 +33,16 @@ import org.json.JSONObject;
  */
 public class DayGraphFragment extends Fragment {
 
+
+    View mView;
     // variables
     private double voltage;
     private double batVoltage;
     private double current;
     private double power;
-    private int time;
+    private String time;
+
+    private ArrayList<DataPoint> dataPointArrayList;
 
     // graphing variables
     private double graphLastXValue = 0d;
@@ -77,6 +88,7 @@ public class DayGraphFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        dataPointArrayList = new ArrayList<DataPoint>();
 
     }
 
@@ -90,7 +102,10 @@ public class DayGraphFragment extends Fragment {
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
+
         super.onViewCreated(view, savedInstanceState);
+        mView =view;
+        /*
         GraphView graph = (GraphView) view.findViewById(R.id.day_graph);
         series = new LineGraphSeries<DataPoint>();
         graph.addSeries(series);
@@ -124,25 +139,56 @@ public class DayGraphFragment extends Fragment {
         //graph.getGridLabelRenderer().set
         graph.getGridLabelRenderer().setVerticalAxisTitleColor(Color.GRAY);
         graph.getGridLabelRenderer().setVerticalLabelsSecondScaleColor(Color.GRAY);
-        graph.getGridLabelRenderer().reloadStyles();
+        graph.getGridLabelRenderer().reloadStyles();*/
     }
 
     public void updateGraph(JSONObject inputJson)
     {
+        //dataPointArrayList = new ArrayList<DataPoint>();
         try {
-            time = Integer.parseInt(inputJson.getString("time"));
-            voltage = Double.parseDouble(inputJson.getString("involtage"));
-            batVoltage = Double.parseDouble(inputJson.getString("batVoltage"));
-            current = Math.abs(Double.parseDouble(inputJson.getString("current")));
-            series.appendData(new DataPoint(time, voltage), true, 40);
-            //graphLastXValue += 1d;
+            if(inputJson.getInt("end")==0) {
+                //Log.v("load graph","data read");
+                time = inputJson.getString("time");
+                voltage = Double.parseDouble(inputJson.getString("involtage"));
+                batVoltage = Double.parseDouble(inputJson.getString("batVoltage"));
+                current = Math.abs(Double.parseDouble(inputJson.getString("current")));
+                int year = Integer.parseInt(time.substring(16,20));
+                int month = Integer.parseInt(time.substring(13,15));
+                int day = Integer.parseInt(time.substring(10,12));
+                int hour = Integer.parseInt(time.substring(0,2));
+                int min = Integer.parseInt(time.substring(2,4));
+                int sec = Integer.parseInt(time.substring(4,6));
 
-            series2.appendData(new DataPoint(time, current), true, 40);
-            //graph2LastXValue += 1d;
+                Calendar cal=new GregorianCalendar(year,month,day,hour,min,sec);
+                dataPointArrayList.add(new DataPoint(cal.getTime(), voltage));
 
-            power = current * voltage;
-            series3.appendData(new DataPoint(time, power), true, 40);
-            //graph3LastXValue += 1d;
+
+            }
+
+            if(inputJson.getInt("end")==1){
+
+                //Log.v("load graph","end of data read");
+                GraphView graph = (GraphView) mView.findViewById(R.id.day_graph);
+                DataPoint[] dataPointArray = dataPointArrayList.toArray(new DataPoint[dataPointArrayList.size()]);
+
+                graph.addSeries(series = new LineGraphSeries<DataPoint>(dataPointArray));
+                graph.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
+                    @Override
+                    public String formatLabel(double value, boolean isValueX) {
+                        // TODO Auto-generated method stub
+                        if (isValueX) {
+                            SimpleDateFormat sdf = new SimpleDateFormat("h:mm a", Locale.ENGLISH);
+                            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                            String formattedDate = sdf.format(value);
+                            return formattedDate;
+                        }
+                        return ""+(int) value;
+                    }
+                });
+                dataPointArrayList = new ArrayList<DataPoint>();
+
+
+            }
 
         }catch(Exception e){
             Log.v("DAY_VIEW","graph not updated");
