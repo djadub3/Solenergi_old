@@ -10,11 +10,15 @@ import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.jjoe64.graphview.DefaultLabelFormatter;
-import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.series.DataPoint;
-import com.jjoe64.graphview.series.LineGraphSeries;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
@@ -27,20 +31,17 @@ import java.util.TimeZone;
 public class DayGraphFragment extends Fragment {
 
     private View mView;
-    // variables
+    // basic variables
     private double voltage;
     private double batVoltage;
     private double current;
     private double power;
     private String time;
-
-    private ArrayList<DataPoint> powerDataPointArrayList;
-    private ArrayList<DataPoint> batteryDataPointArrayList;
-
-    // graphing variables
-
-    private LineGraphSeries<DataPoint> series;
-
+    ArrayList<Entry> powerVals;
+    ArrayList<Entry> batteryVals;
+    ArrayList<String> xLabels;
+    int count;
+    LineChart lineChart;
 
 
     public DayGraphFragment() {
@@ -50,10 +51,11 @@ public class DayGraphFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        powerDataPointArrayList = new ArrayList<DataPoint>();
-        batteryDataPointArrayList = new ArrayList<DataPoint>();
         setHasOptionsMenu(true);
-
+        powerVals = new ArrayList<Entry>();
+        batteryVals = new ArrayList<Entry>();
+        xLabels = new ArrayList<String>();
+        count=0;
     }
 
     @Override
@@ -67,78 +69,63 @@ public class DayGraphFragment extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
 
         super.onViewCreated(view, savedInstanceState);
-        mView =view;
+        lineChart = (LineChart) view.findViewById(R.id.chart);
+
     }
 
     public void updateGraph(JSONObject inputJson)
     {
-        try {
-            if(inputJson.getInt("end")==0) {
-                //Log.v("load graph","data read");
+        try{
+            if(inputJson.getInt("end")==0){
+                float power =(float) inputJson.getDouble("power");
+                float batteryVoltage = (float) inputJson.getDouble("batVoltage");
+                powerVals.add(new Entry(power,count));
+                batteryVals.add(new Entry(batteryVoltage,count));
+                count++;
+
                 time = inputJson.getString("time");
-                power = inputJson.getDouble("power");
-                batVoltage = inputJson.getDouble("batVoltage");
-
-
                 int year = Integer.parseInt(time.substring(16,20));
                 int month = Integer.parseInt(time.substring(13,15));
                 int day = Integer.parseInt(time.substring(10,12));
                 int hour = Integer.parseInt(time.substring(0,2));
                 int min = Integer.parseInt(time.substring(2,4));
                 int sec = Integer.parseInt(time.substring(4,6));
-
                 Calendar cal=new GregorianCalendar(year,month,day,hour,min,sec);
                 cal.setTimeZone(TimeZone.getTimeZone("Etc/GMT"));
+                SimpleDateFormat sdf = new SimpleDateFormat("h:mm a", Locale.ENGLISH);
+                sdf.setTimeZone(TimeZone.getDefault());
+                String formattedDate = sdf.format(cal.getTime());
+                Log.v("graph",formattedDate);
+                xLabels.add(formattedDate);
 
-                powerDataPointArrayList.add(new DataPoint(cal.getTime(), power));
-                batteryDataPointArrayList.add(new DataPoint(cal.getTime(), batVoltage));
 
             }
+            else{
 
-            if(inputJson.getInt("end")==1){
-
-                //Log.v("load graph","end of data read");
-                GraphView graph = (GraphView) mView.findViewById(R.id.day_graph);
-                DataPoint[] powerDataPointArray = powerDataPointArrayList.toArray(new DataPoint[powerDataPointArrayList.size()]);
-                DataPoint[] batteryDataPointArray = batteryDataPointArrayList.toArray(new DataPoint[batteryDataPointArrayList.size()]);
-
-                LineGraphSeries<DataPoint> powerSeries = new LineGraphSeries<DataPoint>(powerDataPointArray);
-                LineGraphSeries<DataPoint> batterySeries = new LineGraphSeries<DataPoint>(batteryDataPointArray);
-
-                graph.addSeries(powerSeries);
-                graph.addSeries(batterySeries);
-
-                powerSeries.setColor(Color.argb(100, 100, 0, 0));
-                batterySeries.setColor(Color.argb(100,0,100,0));
+                LineDataSet setPower = new LineDataSet(powerVals, "Power");
+                setPower.setAxisDependency(YAxis.AxisDependency.LEFT);
+                setPower.setColor(Color.RED);
+                setPower.setDrawCubic(true);
+                setPower.setDrawCircles(false);
 
 
-                powerSeries.setBackgroundColor(Color.argb(50, 100, 0, 0));
-                batterySeries.setBackgroundColor(Color.argb(50, 0, 100, 0));
-                powerSeries.setDrawBackground(true);
-                batterySeries.setDrawBackground(true);
-                graph.getGridLabelRenderer().setPadding(30);
-                graph.getViewport().setScalable(true);
-                graph.getGridLabelRenderer().reloadStyles();
+                LineDataSet setBattery = new LineDataSet(batteryVals, "Battery Voltage");
+                setBattery.setAxisDependency(YAxis.AxisDependency.RIGHT);
+                setBattery.setDrawCubic(true);
+                setBattery.setDrawCircles(false);
 
+                ArrayList<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+                dataSets.add(setPower);
+                dataSets.add(setBattery);
 
-
-                graph.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
-                    @Override
-                    public String formatLabel(double value, boolean isValueX) {
-                        if (isValueX) {
-                            SimpleDateFormat sdf = new SimpleDateFormat("h:mm a", Locale.ENGLISH);
-                            sdf.setTimeZone(TimeZone.getDefault());
-                            String formattedDate = sdf.format(value);
-                            return formattedDate;
-                        }
-                        return ""+(int) value;
-                    }
-                });
-                powerDataPointArrayList = new ArrayList<DataPoint>();
+                LineData data = new LineData(xLabels,dataSets);
+                lineChart.setData(data);
+                XAxis xAxis = lineChart.getXAxis();
+                xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+                lineChart.invalidate();
             }
-
-        }catch(Exception e){
-            Log.v("DAY_VIEW","graph not updated");
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
