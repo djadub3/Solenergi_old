@@ -36,21 +36,8 @@
         android:textColorHighlight="#fffacc"
         android:textSize="20sp"
         android:singleLine="true"
-        android:layout_below="@+id/voltage_text"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_toLeftOf="@+id/day_graph"
-        android:layout_toStartOf="@+id/day_graph" />
-
-    <com.jjoe64.graphview.GraphView
-        android:layout_width="400dp"
-        android:layout_height="200dip"
-        android:id="@+id/day_graph"
-        android:layout_alignParentBottom="true"
-        android:layout_toRightOf="@+id/voltage_text"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true" />
+        android:layout_alignParentTop="true"
+        android:layout_toEndOf="@+id/voltage_text" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -63,11 +50,8 @@
         android:textSize="20sp"
         android:singleLine="true"
         android:textColor="#78f9ff"
-        android:layout_below="@+id/current_text"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_toLeftOf="@+id/day_graph"
-        android:layout_toStartOf="@+id/day_graph" />
+        android:layout_alignParentTop="true"
+        android:layout_toEndOf="@+id/current_text" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -80,10 +64,15 @@
         android:textSize="20sp"
         android:singleLine="true"
         android:textColor="#f7fdff"
-        android:layout_below="@+id/power_text"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_toLeftOf="@+id/day_graph"
-        android:layout_toStartOf="@+id/day_graph" />
+        android:layout_alignParentTop="true"
+        android:layout_toEndOf="@+id/power_text" />
+
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/chart"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toEndOf="@+id/voltage_text"
+        android:layout_below="@+id/bat_voltage_text"
+        android:layout_alignParentStart="true" />
 
 </RelativeLayout>

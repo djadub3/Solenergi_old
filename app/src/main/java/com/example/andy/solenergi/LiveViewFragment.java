@@ -9,11 +9,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.series.DataPoint;
-import com.jjoe64.graphview.series.LineGraphSeries;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.YAxisValueFormatter;
 
 import org.json.JSONObject;
+
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -32,19 +39,19 @@ public class LiveViewFragment extends Fragment {
     private TextView powerView;
 
     // variables
-    private double voltage;
-    private double batVoltage;
-    private double current;
-    private double power;
+    private float voltage;
+    private float batVoltage;
+    private float current;
+    private float power;
 
     // graphing variables
-    private double graphLastXValue = 0d;
-    private LineGraphSeries<DataPoint> series;
-    private double graph2LastXValue = 0d;
-    private double graph3LastXValue = 0d;
-    private LineGraphSeries<DataPoint> series2;
-    private LineGraphSeries<DataPoint> series3;
-
+    LineChart lineChart;
+    LineDataSet powerSet;
+    LineDataSet batterySet;
+    LineDataSet currentSet;
+    LineData data;
+    ArrayList<String> xLabels;
+    int count;
 
     public LiveViewFragment() {
     }
@@ -69,67 +76,118 @@ public class LiveViewFragment extends Fragment {
         batVoltageView = (TextView) view.findViewById(R.id.bat_voltage_text);
         currentView = (TextView) view.findViewById(R.id.current_text);
         powerView = (TextView) view.findViewById(R.id.power_text);
+        count=0;
+
+        lineChart = (LineChart) view.findViewById(R.id.chart);
+        lineChart.setDescription("");
+
+        data = new LineData();
+
+        XAxis xAxis = lineChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+
+        YAxis leftYAxis = lineChart.getAxisLeft();
+        leftYAxis.setValueFormatter(new WattageYAxisValueFormatter());
+        leftYAxis.setLabelCount(6, true);
+        leftYAxis.setAxisMinValue(0);
+        leftYAxis.setAxisMaxValue(5);
+
+        YAxis rightYAxis = lineChart.getAxisRight();
+        rightYAxis.setValueFormatter(new VoltageAmperageYAxisValueFormatter());
+        rightYAxis.setLabelCount(6, true);
+        rightYAxis.setAxisMinValue(0);
+        rightYAxis.setAxisMaxValue(5);
 
 
-        GraphView graph = (GraphView) view.findViewById(R.id.day_graph);
-        series = new LineGraphSeries<DataPoint>();
-        graph.addSeries(series);
-        graph.getGridLabelRenderer().setGridColor(Color.GRAY);
-        series2 = new LineGraphSeries<DataPoint>();
-        graph.addSeries(series2);
-        series3 = new LineGraphSeries<DataPoint>();
-        graph.getSecondScale().addSeries(series3);
+        powerSet = new LineDataSet(null, "Power");
+        powerSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+        powerSet.setColor(Color.RED);
+        powerSet.setDrawCubic(true);
+        powerSet.setDrawCircles(false);
+        powerSet.setLineWidth(3);
 
-        graph.getGridLabelRenderer().setVerticalLabelsSecondScaleColor(Color.GRAY);
-        graph.getGridLabelRenderer().setVerticalLabelsColor(Color.GRAY);
+        batterySet = new LineDataSet(null, "Battery");
+        batterySet.setAxisDependency(YAxis.AxisDependency.RIGHT);
+        batterySet.setColor(Color.GREEN);
+        batterySet.setDrawCubic(true);
+        batterySet.setDrawCircles(false);
+        batterySet.setLineWidth(3);
 
-        graph.getSecondScale().setMinY(0);
-        graph.getSecondScale().setMaxY(30);
+        currentSet = new LineDataSet(null, "Current");
+        currentSet.setAxisDependency(YAxis.AxisDependency.RIGHT);
+        currentSet.setColor(Color.BLUE);
+        currentSet.setDrawCubic(true);
+        currentSet.setDrawCircles(false);
+        currentSet.setLineWidth(3);
 
-        series2.setColor(Color.YELLOW);
-        series.setColor(Color.MAGENTA);
-        series3.setColor(Color.CYAN);
+        data.addDataSet(powerSet);
+        data.addDataSet(batterySet);
+        data.addDataSet(currentSet);
+        lineChart.setData(data);
 
-        graph.getViewport().setXAxisBoundsManual(true);
-        graph.getViewport().setYAxisBoundsManual(true);
-        graph.getViewport().setMinX(0);
-        graph.getViewport().setMaxX(10);
-        graph.getViewport().setMinY(0);
-        graph.getViewport().setMaxY(15);
-        graph.getGridLabelRenderer().setPadding(30);
-        graph.getGridLabelRenderer().setHorizontalLabelsVisible(false);
-        graph.getGridLabelRenderer().setNumVerticalLabels(16);
-        graph.getGridLabelRenderer().setVerticalAxisTitle("Volts/Amps");
-        //graph.getGridLabelRenderer().set
-        graph.getGridLabelRenderer().setVerticalAxisTitleColor(Color.GRAY);
-        graph.getGridLabelRenderer().setVerticalLabelsSecondScaleColor(Color.GRAY);
-        graph.getGridLabelRenderer().reloadStyles();
     }
 
     public void updateGraph(JSONObject inputJson)
     {
         try {
-            voltage = Double.parseDouble(inputJson.getString("voltage"));
+            voltage = Float.parseFloat(inputJson.getString("voltage"));
             voltageView.setText(String.format("%.2f", voltage) + "V");    // update text views
 
-            batVoltage = Double.parseDouble(inputJson.getString("batVoltage"));
+            batVoltage = Float.parseFloat(inputJson.getString("batVoltage"));
             batVoltageView.setText(String.format("%.2f", batVoltage) + "V");
 
-            current = Math.abs(Double.parseDouble(inputJson.getString("current")));
+            current = Math.abs(Float.parseFloat(inputJson.getString("current")));
             currentView.setText((String.format("%.2f", current) + "A"));
 
-            series.appendData(new DataPoint(graphLastXValue, voltage), true, 40);
-            graphLastXValue += 1d;
-
-            series2.appendData(new DataPoint(graph2LastXValue, current), true, 40);
-            graph2LastXValue += 1d;
-
-            power = current * voltage;
-            series3.appendData(new DataPoint(graph3LastXValue, power), true, 40);
-            graph3LastXValue += 1d;
-
+            power = voltage*current;
             powerView.setText((String.format("%.2f", power) + "W"));
+
+            data.addXValue(count+"");
+            powerSet.addEntry(new Entry(power, count));
+            batterySet.addEntry(new Entry(batVoltage, count));
+            currentSet.addEntry(new Entry(current, count));
+            count++;
+
+
+            data.notifyDataChanged(); // let the data know a dataSet changed
+            lineChart.notifyDataSetChanged(); // let the chart know it's data changed
+            lineChart.invalidate(); // refresh
+
+
+
         }catch(Exception e){}
+    }
+
+    public class WattageYAxisValueFormatter implements YAxisValueFormatter {
+
+        private DecimalFormat mFormat;
+
+        public WattageYAxisValueFormatter () {
+            mFormat = new DecimalFormat("###,###,##0.0"); // use one decimal
+        }
+
+        @Override
+        public String getFormattedValue(float value, YAxis yAxis) {
+            // write your logic here
+            // access the YAxis object to get more information
+            return mFormat.format(value) + " W"; // e.g. append a dollar-sign
+        }
+    }
+
+    public class VoltageAmperageYAxisValueFormatter implements YAxisValueFormatter {
+
+        private DecimalFormat mFormat;
+
+        public VoltageAmperageYAxisValueFormatter() {
+            mFormat = new DecimalFormat("###,###,##0.0"); // use one decimal
+        }
+
+        @Override
+        public String getFormattedValue(float value, YAxis yAxis) {
+            // write your logic here
+            // access the YAxis object to get more information
+            return mFormat.format(value) + " V,A"; // e.g. append a dollar-sign
+        }
     }
 
 }
